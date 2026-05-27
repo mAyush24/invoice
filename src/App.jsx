@@ -9,8 +9,15 @@ import DamageGoods from './components/DamageGoods';
 import ProfitLoss from './components/ProfitLoss';
 import BillPreview from './components/BillPreview';
 import Toast from './components/Toast';
+import Login from './components/Login';
+import { supabase } from './supabaseClient';
 
 export default function App() {
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState(() => {
+    return JSON.parse(localStorage.getItem('sm_user') || 'null');
+  });
+
   // Navigation Router
   const [currentPage, setCurrentPage] = useState('dashboard');
 
@@ -19,13 +26,8 @@ export default function App() {
     return JSON.parse(localStorage.getItem('sm_bills') || '[]');
   });
 
-  const [stockLog, setStockLog] = useState(() => {
-    return JSON.parse(localStorage.getItem('sm_stocklog') || '[]');
-  });
-
-  const [damageLog, setDamageLog] = useState(() => {
-    return JSON.parse(localStorage.getItem('sm_damage') || '[]');
-  });
+  const [stockLog, setStockLog] = useState([]);
+  const [damageLog, setDamageLog] = useState([]);
 
   const [billCounter, setBillCounter] = useState(() => {
     return parseInt(localStorage.getItem('sm_billcounter') || '1000');
@@ -38,20 +40,106 @@ export default function App() {
 
   // Save changes to localStorage
   useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('sm_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('sm_user');
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
     localStorage.setItem('sm_bills', JSON.stringify(bills));
   }, [bills]);
 
-  useEffect(() => {
-    localStorage.setItem('sm_stocklog', JSON.stringify(stockLog));
-  }, [stockLog]);
 
-  useEffect(() => {
-    localStorage.setItem('sm_damage', JSON.stringify(damageLog));
-  }, [damageLog]);
 
   useEffect(() => {
     localStorage.setItem('sm_billcounter', billCounter.toString());
   }, [billCounter]);
+
+  // Enforce page redirection for Staff role
+  useEffect(() => {
+    if (currentUser?.role === 'staff' && currentPage !== 'stock') {
+      setCurrentPage('stock');
+    }
+  }, [currentUser, currentPage]);
+
+  // Fetch stock logs and damage logs from Supabase on mount or login change
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const fetchSupabaseData = async () => {
+      try {
+        // Fetch stock log
+        const { data: stockData, error: stockError } = await supabase
+          .from('stock_log')
+          .select('*')
+          .order('id', { ascending: false });
+
+        if (stockError) throw stockError;
+
+        if (stockData) {
+          const formattedStock = stockData.map(row => ({
+            id: parseInt(row.id),
+            type: row.type,
+            date: row.date,
+            item: row.item,
+            qty: parseInt(row.qty),
+            rate: parseFloat(row.rate || 0),
+            party: row.party || '—',
+            note: row.note || ''
+          }));
+          setStockLog(formattedStock);
+        } else {
+          setStockLog([]);
+        }
+
+        // Fetch damage log
+        const { data: damageData, error: damageError } = await supabase
+          .from('damage_log')
+          .select('*')
+          .order('id', { ascending: false });
+
+        if (damageError) throw damageError;
+
+        if (damageData) {
+          const formattedDamage = damageData.map(row => ({
+            id: parseInt(row.id),
+            date: row.date,
+            item: row.item,
+            qty: parseInt(row.qty),
+            reason: row.reason || ''
+          }));
+          setDamageLog(formattedDamage);
+        } else {
+          setDamageLog([]);
+        }
+      } catch (err) {
+        console.error('Error fetching Supabase data:', err);
+        showToast('⚠️', 'Error: Could not retrieve stock details from Supabase.');
+      }
+    };
+
+    fetchSupabaseData();
+  }, [currentUser]);
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    if (user.role === 'staff') {
+      setCurrentPage('stock');
+    } else {
+      setCurrentPage('dashboard');
+    }
+    showToast('👋', `Welcome, ${user.username}!`);
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to sign out?')) {
+      setCurrentUser(null);
+      setCurrentPage('dashboard');
+      showToast('👋', 'Signed out successfully!');
+    }
+  };
 
   // Utility to show temporary toast
   const showToast = (icon, message) => {
@@ -116,38 +204,122 @@ export default function App() {
   };
 
   // Stock Actions
-  const handleAddStock = (newStock) => {
+  const handleAddStock = async (newStock) => {
     const logEntry = {
-      id: Date.now(),
       type: 'add',
       date: new Date().toISOString().split('T')[0],
       ...newStock
     };
-    setStockLog([logEntry, ...stockLog]);
-    showToast('✅', `Added ${newStock.qty} units of ${newStock.item}`);
+
+    try {
+      const { data, error } = await supabase
+        .from('stock_log')
+        .insert([logEntry])
+        .select();
+
+      if (error) throw error;
+      if (data && data[0]) {
+        const savedEntry = {
+          id: parseInt(data[0].id),
+          type: data[0].type,
+          date: data[0].date,
+          ...newStock
+        };
+        setStockLog([savedEntry, ...stockLog]);
+        showToast('✅', `Successfully added ${newStock.qty} units of ${newStock.item}!`);
+      }
+    } catch (err) {
+      console.error('Error adding stock to Supabase:', err);
+      showToast('⚠️', 'Failed to add stock. Database connection error.');
+    }
   };
 
-  const handleMinusStock = (minusStock) => {
+  const handleMinusStock = async (minusStock) => {
     const logEntry = {
-      id: Date.now(),
       type: 'minus',
       date: new Date().toISOString().split('T')[0],
       ...minusStock,
       rate: 0
     };
-    setStockLog([logEntry, ...stockLog]);
-    showToast('✅', `Removed ${minusStock.qty} units of ${minusStock.item}`);
+
+    try {
+      const { data, error } = await supabase
+        .from('stock_log')
+        .insert([logEntry])
+        .select();
+
+      if (error) throw error;
+      if (data && data[0]) {
+        const savedEntry = {
+          id: parseInt(data[0].id),
+          type: data[0].type,
+          date: data[0].date,
+          ...minusStock,
+          rate: 0
+        };
+        setStockLog([savedEntry, ...stockLog]);
+        showToast('✅', `Successfully removed ${minusStock.qty} units of ${minusStock.item}!`);
+      }
+    } catch (err) {
+      console.error('Error removing stock from Supabase:', err);
+      showToast('⚠️', 'Failed to remove stock. Database connection error.');
+    }
   };
 
   // Damage Actions
-  const handleLogDamage = (damage) => {
+  const handleLogDamage = async (damage) => {
     const logEntry = {
-      id: Date.now(),
       date: new Date().toISOString().split('T')[0],
       ...damage
     };
-    setDamageLog([logEntry, ...damageLog]);
-    showToast('⚠️', `Damage logged: ${damage.qty} × ${damage.item}`);
+
+    try {
+      const { data, error } = await supabase
+        .from('damage_log')
+        .insert([logEntry])
+        .select();
+
+      if (error) throw error;
+      if (data && data[0]) {
+        const savedEntry = {
+          id: parseInt(data[0].id),
+          date: data[0].date,
+          ...damage
+        };
+        setDamageLog([savedEntry, ...damageLog]);
+        showToast('⚠️', `Damage logged: ${damage.qty} × ${damage.item}`);
+      }
+    } catch (err) {
+      console.error('Error logging damage to Supabase:', err);
+      showToast('⚠️', 'Failed to log damage. Database connection error.');
+    }
+  };
+
+  const handleDeleteStockItem = async (itemName) => {
+    if (window.confirm(`Are you sure you want to completely delete "${itemName}" from stock? This will delete all its logs permanently.`)) {
+      try {
+        const { error: stockError } = await supabase
+          .from('stock_log')
+          .delete()
+          .eq('item', itemName);
+
+        if (stockError) throw stockError;
+
+        const { error: damageError } = await supabase
+          .from('damage_log')
+          .delete()
+          .eq('item', itemName);
+
+        if (damageError) throw damageError;
+
+        setStockLog(stockLog.filter(l => l.item !== itemName));
+        setDamageLog(damageLog.filter(d => d.item !== itemName));
+        showToast('🗑', `Completely deleted "${itemName}" from database.`);
+      } catch (err) {
+        console.error('Error deleting stock item:', err);
+        showToast('⚠️', 'Failed to delete item from Supabase.');
+      }
+    }
   };
 
   // PDF & Printing functions
@@ -335,6 +507,8 @@ export default function App() {
             onAddStock={handleAddStock}
             onMinusStock={handleMinusStock}
             showToast={showToast}
+            role={currentUser?.role}
+            onDeleteStockItem={handleDeleteStockItem}
           />
         );
       case 'stocklog':
@@ -365,10 +539,24 @@ export default function App() {
     }
   };
 
+  if (!currentUser) {
+    return (
+      <>
+        <Login onLogin={handleLogin} />
+        <Toast toast={toast} onClose={handleCloseToast} />
+      </>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* SIDEBAR NAVIGATION */}
-      <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      <Sidebar 
+        currentPage={currentPage} 
+        setCurrentPage={setCurrentPage} 
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
 
       {/* MAIN VIEWPORT */}
       <main className="main-content">

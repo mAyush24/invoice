@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 
-export default function Stock({ stockSummary, onAddStock, onMinusStock, showToast }) {
+export default function Stock({ stockSummary, onAddStock, onMinusStock, showToast, role, onDeleteStockItem }) {
   // Add Stock state variables
   const [addItemName, setAddItemName] = useState('');
   const [addQty, setAddQty] = useState('');
-  const [addRate, setAddRate] = useState('');
   const [addSupplier, setAddSupplier] = useState('');
 
   // Minus Stock state variables
@@ -17,7 +16,7 @@ export default function Stock({ stockSummary, onAddStock, onMinusStock, showToas
     e.preventDefault();
     const name = addItemName.trim();
     const qty = parseInt(addQty);
-    const rate = parseFloat(addRate);
+    const rate = 0; // Amount/Rate input is completely removed
 
     if (!name) {
       showToast('⚠️', 'Please enter an item name');
@@ -25,10 +24,6 @@ export default function Stock({ stockSummary, onAddStock, onMinusStock, showToas
     }
     if (isNaN(qty) || qty <= 0) {
       showToast('⚠️', 'Please enter a valid quantity');
-      return;
-    }
-    if (isNaN(rate) || rate < 0) {
-      showToast('⚠️', 'Please enter a valid purchase rate');
       return;
     }
 
@@ -42,7 +37,6 @@ export default function Stock({ stockSummary, onAddStock, onMinusStock, showToas
     // Reset fields
     setAddItemName('');
     setAddQty('');
-    setAddRate('');
     setAddSupplier('');
   };
 
@@ -79,119 +73,115 @@ export default function Stock({ stockSummary, onAddStock, onMinusStock, showToas
   return (
     <div className="page">
       <div className="page-title">Stock Management</div>
-      <div className="page-sub">Manually add or remove stock items</div>
-
-      <div className="stock-flex-grid">
-        {/* ADD STOCK CARD */}
-        <div className="card">
-          <div className="card-title" style={{ color: 'var(--green)' }}>
-            ➕ Add Stock
-          </div>
-          <form onSubmit={handleAddSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="form-group">
-              <label>Item Name</label>
-              <input 
-                type="text" 
-                value={addItemName}
-                onChange={(e) => setAddItemName(e.target.value)}
-                placeholder="Item name"
-                list="add-stock-datalist"
-                autoComplete="off"
-              />
-              <datalist id="add-stock-datalist">
-                {stockItemsList.map(item => <option key={item} value={item} />)}
-              </datalist>
-            </div>
-            <div className="form-group">
-              <label>Quantity</label>
-              <input 
-                type="number" 
-                value={addQty}
-                onChange={(e) => setAddQty(e.target.value)}
-                placeholder="e.g. 100" 
-                min="1"
-              />
-            </div>
-            <div className="form-group">
-              <label>Rate per unit (₹)</label>
-              <input 
-                type="number" 
-                step="any"
-                value={addRate}
-                onChange={(e) => setAddRate(e.target.value)}
-                placeholder="e.g. 50" 
-                min="0"
-              />
-            </div>
-            <div className="form-group">
-              <label>Supplier / Note</label>
-              <input 
-                type="text" 
-                value={addSupplier}
-                onChange={(e) => setAddSupplier(e.target.value)}
-                placeholder="Supplier name or note" 
-              />
-            </div>
-            <button type="submit" className="btn btn-success" style={{ marginTop: '8px' }}>
-              ➕ Add Stock
-            </button>
-          </form>
-        </div>
-
-        {/* MINUS STOCK CARD */}
-        <div className="card">
-          <div className="card-title" style={{ color: 'var(--accent)' }}>
-            ➖ Minus Stock
-          </div>
-          <form onSubmit={handleMinusSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="form-group">
-              <label>Party Name</label>
-              <input 
-                type="text" 
-                value={minusParty}
-                onChange={(e) => setMinusParty(e.target.value)}
-                placeholder="Who received goods" 
-              />
-            </div>
-            <div className="form-group">
-              <label>Item Name</label>
-              <input 
-                type="text" 
-                value={minusItemName}
-                onChange={(e) => setMinusItemName(e.target.value)}
-                placeholder="Item name" 
-                list="minus-stock-datalist"
-                autoComplete="off"
-              />
-              <datalist id="minus-stock-datalist">
-                {stockItemsList.map(item => <option key={item} value={item} />)}
-              </datalist>
-            </div>
-            <div className="form-group">
-              <label>Quantity</label>
-              <input 
-                type="number" 
-                value={minusQty}
-                onChange={(e) => setMinusQty(e.target.value)}
-                placeholder="e.g. 20" 
-                min="1"
-              />
-            </div>
-            <div className="form-group">
-              <label>Note</label>
-              <input 
-                type="text" 
-                value={minusNote}
-                onChange={(e) => setMinusNote(e.target.value)}
-                placeholder="Optional note" 
-              />
-            </div>
-            <button type="submit" className="btn btn-danger" style={{ marginTop: '8px' }}>
-              ➖ Minus Stock
-            </button>
-          </form>
-        </div>
+      <div className="page-sub">
+        {role === 'admin' 
+          ? 'View current inventory levels and stock status' 
+          : 'Manually add or remove stock items'}
       </div>
+
+      {/* Forms are ONLY accessible to Staff role, not Admin */}
+      {role !== 'admin' && (
+        <div className="stock-flex-grid">
+          {/* ADD STOCK CARD */}
+          <div className="card">
+            <div className="card-title" style={{ color: 'var(--green)' }}>
+              ➕ Add Stock
+            </div>
+            <form onSubmit={handleAddSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group">
+                <label>Item Name</label>
+                <input 
+                  type="text" 
+                  value={addItemName}
+                  onChange={(e) => setAddItemName(e.target.value)}
+                  placeholder="Item name"
+                  list="add-stock-datalist"
+                  autoComplete="off"
+                />
+                <datalist id="add-stock-datalist">
+                  {stockItemsList.map(item => <option key={item} value={item} />)}
+                </datalist>
+              </div>
+              <div className="form-group">
+                <label>Quantity</label>
+                <input 
+                  type="number" 
+                  value={addQty}
+                  onChange={(e) => setAddQty(e.target.value)}
+                  placeholder="e.g. 100" 
+                  min="1"
+                />
+              </div>
+              <div className="form-group">
+                <label>Supplier / Note</label>
+                <input 
+                  type="text" 
+                  value={addSupplier}
+                  onChange={(e) => setAddSupplier(e.target.value)}
+                  placeholder="Supplier name or note" 
+                />
+              </div>
+              <button type="submit" className="btn btn-success" style={{ marginTop: '8px' }}>
+                ➕ Add Stock
+              </button>
+            </form>
+          </div>
+
+          {/* MINUS STOCK CARD */}
+          <div className="card">
+            <div className="card-title" style={{ color: 'var(--accent)' }}>
+              ➖ Minus Stock
+            </div>
+            <form onSubmit={handleMinusSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group">
+                <label>Party Name</label>
+                <input 
+                  type="text" 
+                  value={minusParty}
+                  onChange={(e) => setMinusParty(e.target.value)}
+                  placeholder="Who received goods" 
+                />
+              </div>
+              <div className="form-group">
+                <label>Item Name</label>
+                <input 
+                  type="text" 
+                  value={minusItemName}
+                  onChange={(e) => setMinusItemName(e.target.value)}
+                  placeholder="Item name" 
+                  list="minus-stock-datalist"
+                  autoComplete="off"
+                />
+                <datalist id="minus-stock-datalist">
+                  {stockItemsList.map(item => <option key={item} value={item} />)}
+                </datalist>
+              </div>
+              <div className="form-group">
+                <label>Quantity</label>
+                <input 
+                  type="number" 
+                  value={minusQty}
+                  onChange={(e) => setMinusQty(e.target.value)}
+                  placeholder="e.g. 20" 
+                  min="1"
+                />
+              </div>
+              <div className="form-group">
+                <label>Note</label>
+                <input 
+                  type="text" 
+                  value={minusNote}
+                  onChange={(e) => setMinusNote(e.target.value)}
+                  placeholder="Optional note" 
+                />
+              </div>
+              <button type="submit" className="btn btn-danger" style={{ marginTop: '8px' }}>
+                ➖ Minus Stock
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* CURRENT STOCK LEVEL CARD */}
       <div className="card">
@@ -200,7 +190,7 @@ export default function Stock({ stockSummary, onAddStock, onMinusStock, showToas
           {stockItemsList.length === 0 ? (
             <div className="empty-state">
               <div className="empty-state-icon">📦</div>
-              <div className="empty-state-text">No stock records found. Add stock to begin tracking.</div>
+              <div className="empty-state-text">No stock records found.</div>
             </div>
           ) : (
             <table>
@@ -208,15 +198,12 @@ export default function Stock({ stockSummary, onAddStock, onMinusStock, showToas
                 <tr>
                   <th>Item</th>
                   <th>In Stock</th>
-                  <th>Avg Rate</th>
-                  <th>Stock Value</th>
+                  {role === 'staff' && <th style={{ width: '100px', textAlign: 'center' }}>Action</th>}
                 </tr>
               </thead>
               <tbody>
                 {stockItemsList.map((item) => {
                   const s = stockSummary[item];
-                  const avg = s.totalAdded > 0 ? (s.totalCost / s.totalAdded) : 0;
-                  const val = s.qty > 0 ? s.qty * avg : 0;
 
                   return (
                     <tr key={item}>
@@ -226,8 +213,18 @@ export default function Stock({ stockSummary, onAddStock, onMinusStock, showToas
                           {s.qty}
                         </span>
                       </td>
-                      <td className="num-font">₹{avg.toFixed(2)}</td>
-                      <td className="num-font">₹{val.toFixed(2)}</td>
+                      {role === 'staff' && (
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-danger"
+                            onClick={() => onDeleteStockItem && onDeleteStockItem(item)}
+                            style={{ padding: '6px 12px', fontSize: '11px', gap: '4px' }}
+                          >
+                            🗑 Delete
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
