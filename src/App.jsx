@@ -176,7 +176,16 @@ export default function App() {
     <title>${escapeHtml(bill.billNo)} - ${escapeHtml(bill.party)}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0;}
-      body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#222;padding:40px;max-width:680px;margin:0 auto;}
+      body{
+        font-family:'Segoe UI',Arial,sans-serif;
+        background:#fff;
+        color:#222;
+        padding:40px;
+        max-width:680px;
+        margin:0 auto;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid #111;}
       .company{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#111;}
       .company small{display:block;font-size:12px;font-weight:400;color:#777;margin-top:2px;letter-spacing:0;}
@@ -198,7 +207,11 @@ export default function App() {
       .total-box .val{font-size:22px;font-weight:800;letter-spacing:-0.5px;}
       .footer{margin-top:32px;text-align:center;font-size:11px;color:#bbb;border-top:1px solid #eee;padding-top:16px;}
       @media print{
-        body{padding:24px;}
+        body{
+          padding:24px;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
         @page{size:A4;margin:15mm 12mm;}
       }
     </style>
