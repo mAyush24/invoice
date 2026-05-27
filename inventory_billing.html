@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockMaster — Inventory & Billing</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #18181f;
+    --surface2: #22222c;
+    --border: #2e2e3a;
+    --accent: #f0c040;
+    --accent2: #e06060;
+    --green: #4ecb71;
+    --red: #e06060;
+    --text: #f0efe8;
+    --muted: #7b7a88;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+  /* SIDEBAR */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+    position: fixed;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--accent);
+    padding: 0 20px 28px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 20px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+    font-size: 13.5px;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(240,192,64,0.07); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .main { margin-left: 220px; flex: 1; padding: 32px; max-width: calc(100vw - 220px); }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .page-sub { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 18px;
+    color: var(--accent);
+  }
+
+  /* FORMS */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  select option { background: var(--surface2); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .btn-primary { background: var(--accent); color: #111; }
+  .btn-primary:hover { background: #ffd55a; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #e87878; }
+  .btn-success { background: var(--green); color: #111; }
+  .btn-success:hover { background: #6de08a; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 11px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+  }
+  .badge-green { background: rgba(78,203,113,0.15); color: var(--green); }
+  .badge-red { background: rgba(224,96,96,0.15); color: var(--red); }
+  .badge-yellow { background: rgba(240,192,64,0.15); color: var(--accent); }
+  .badge-gray { background: rgba(123,122,136,0.2); color: var(--muted); }
+
+  /* STAT CARDS */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.yellow { color: var(--accent); }
+
+  /* BILL ITEMS */
+  .bill-items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .bill-items-table th, .bill-items-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .bill-items-table th { background: var(--surface2); font-size: 11px; color: var(--muted); text-transform: uppercase; }
+  .add-item-row { display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr auto; gap: 8px; align-items: end; margin-bottom: 10px; }
+  @media (max-width: 700px) { .add-item-row { grid-template-columns: 1fr 1fr; } }
+
+  /* BILL PREVIEW */
+  .bill-preview {
+    background: #fff;
+    color: #222;
+    border-radius: var(--radius);
+    padding: 30px;
+    font-family: 'DM Sans', sans-serif;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .bill-preview h2 { font-family: 'Syne', sans-serif; font-size: 22px; margin-bottom: 4px; color: #111; }
+  .bill-preview .meta { color: #666; font-size: 12px; margin-bottom: 20px; }
+  .bill-preview table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .bill-preview th { background: #f4f4f4; padding: 8px 10px; text-align: left; font-size: 11px; color: #555; border-bottom: 2px solid #ddd; }
+  .bill-preview td { padding: 8px 10px; border-bottom: 1px solid #eee; color: #333; }
+  .bill-preview .total-row td { font-weight: 700; border-top: 2px solid #ccc; color: #111; }
+  .bill-preview .footer { margin-top: 20px; font-size: 11px; color: #999; text-align: center; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--surface2);
+    border: none;
+    color: var(--muted);
+    border-radius: 6px;
+    width: 30px; height: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 13.5px;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    animation: slideUp 0.3s ease;
+  }
+  .toast.show { display: flex; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* PRINT */
+  @media print {
+    body { background: white; }
+    .sidebar, .main > *:not(.page.active), .btn-row, .no-print { display: none !important; }
+    .main { margin-left: 0; padding: 0; }
+    .bill-preview { box-shadow: none; border: none; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .sidebar { width: 60px; }
+    .nav-item span { display: none; }
+    .logo { font-size: 0; padding: 0 10px 28px; }
+    .logo::after { content: "SM"; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: var(--accent); }
+    .main { margin-left: 60px; padding: 20px 16px; max-width: calc(100vw - 60px); }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .profit-owner { color: var(--green); font-family: 'DM Mono', monospace; font-size: 12px; }
+  .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
+  .section-gap { margin-bottom: 14px; }
+  .tag-damage { background: rgba(224,96,96,0.12); color: var(--red); padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .tag-add { background: rgba(78,203,113,0.12); color: var(--green); padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .tag-minus { background: rgba(240,192,64,0.12); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">Stock<span>Master</span></div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">📊</span><span>Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="showPage('billing')">
+      <span class="nav-icon">🧾</span><span>New Bill</span>
+    </div>
+    <div class="nav-item" onclick="showPage('bills')">
+      <span class="nav-icon">📋</span><span>All Bills</span>
+    </div>
+    <div class="nav-item" onclick="showPage('stock')">
+      <span class="nav-icon">📦</span><span>Stock</span>
+    </div>
+    <div class="nav-item" onclick="showPage('stocklog')">
+      <span class="nav-icon">📝</span><span>Stock Log</span>
+    </div>
+    <div class="nav-item" onclick="showPage('damage')">
+      <span class="nav-icon">⚠️</span><span>Damage Goods</span>
+    </div>
+    <div class="nav-item" onclick="showPage('profitloss')">
+      <span class="nav-icon">💰</span><span>Profit & Loss</span>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Overview of your business</div>
+      <div class="stats-row" id="stats-row"></div>
+      <div class="card">
+        <div class="card-title">Recent Bills</div>
+        <div class="table-wrap"><table id="dash-bills-table">
+          <thead><tr><th>Bill No</th><th>Party</th><th>Date</th><th>Sale Amount</th><th>Profit</th><th>Action</th></tr></thead>
+          <tbody id="dash-bills-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- NEW BILL -->
+    <div id="page-billing" class="page">
+      <div class="page-title">Create Bill</div>
+      <div class="page-sub">Generate a customer bill with profit tracking</div>
+      <div class="card">
+        <div class="card-title">Bill Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Party / Customer Name</label>
+            <input type="text" id="bill-party" placeholder="e.g. Ramesh Traders">
+          </div>
+          <div class="form-group">
+            <label>Bill Number</label>
+            <input type="text" id="bill-no" placeholder="Auto or custom">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="bill-date">
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <input type="text" id="bill-notes" placeholder="Optional">
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add Items</div>
+        <div class="add-item-row">
+          <div class="form-group">
+            <label>Item Name</label>
+            <input type="text" id="item-name" placeholder="Item name" list="stock-items-list">
+            <datalist id="stock-items-list"></datalist>
+          </div>
+          <div class="form-group">
+            <label>Purchase Rate (₹)</label>
+            <input type="number" id="item-purchase" placeholder="0.00" min="0">
+          </div>
+          <div class="form-group">
+            <label>Sale Rate (₹)</label>
+            <input type="number" id="item-sale" placeholder="0.00" min="0">
+          </div>
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" id="item-qty" placeholder="0" min="1">
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="addBillItem()">+ Add</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="bill-items-table">
+            <thead><tr>
+              <th>Item</th><th>Purchase Rate</th><th>Sale Rate</th><th>Qty</th>
+              <th>Sale Total</th><th>Profit</th><th></th>
+            </tr></thead>
+            <tbody id="bill-items-body"></tbody>
+            <tfoot id="bill-items-foot"></tfoot>
+          </table>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-success" onclick="saveBill()">💾 Save Bill</button>
+          <button class="btn btn-ghost" onclick="previewBill()">👁 Preview (Customer)</button>
+          <button class="btn btn-ghost" onclick="clearBill()">🗑 Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL BILLS -->
+    <div id="page-bills" class="page">
+      <div class="page-title">All Bills</div>
+      <div class="page-sub">View, print, and manage all generated bills</div>
+      <div class="card">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr auto; align-items:end; margin-bottom:12px;">
+          <div class="form-group">
+            <label>Search Party</label>
+            <input type="text" id="search-party" placeholder="Party name..." oninput="renderBillsTable()">
+          </div>
+          <div class="form-group">
+            <label>Date From</label>
+            <input type="date" id="filter-from" onchange="renderBillsTable()">
+          </div>
+          <div class="form-group">
+            <label>Date To</label>
+            <input type="date" id="filter-to" onchange="renderBillsTable()">
+          </div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Bill No</th><th>Party</th><th>Date</th><th>Items</th><th>Sale Total</th><th>Purchase Total</th><th>Profit</th><th>Actions</th></tr></thead>
+          <tbody id="bills-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- STOCK -->
+    <div id="page-stock" class="page">
+      <div class="page-title">Stock Management</div>
+      <div class="page-sub">Manually add or remove stock items</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;" class="stock-grid">
+        <div class="card">
+          <div class="card-title" style="color:var(--green)">➕ Add Stock</div>
+          <div class="form-group section-gap"><label>Item Name</label><input type="text" id="add-item" placeholder="Item name"></div>
+          <div class="form-group section-gap"><label>Quantity</label><input type="number" id="add-qty" placeholder="e.g. 100" min="1"></div>
+          <div class="form-group section-gap"><label>Rate per unit (₹)</label><input type="number" id="add-rate" placeholder="e.g. 50" min="0"></div>
+          <div class="form-group section-gap"><label>Supplier / Note</label><input type="text" id="add-supplier" placeholder="Supplier name or note"></div>
+          <div class="btn-row"><button class="btn btn-success" onclick="addStock()">➕ Add Stock</button></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:var(--accent)">➖ Minus Stock</div>
+          <div class="form-group section-gap"><label>Party Name</label><input type="text" id="minus-party" placeholder="Who received goods"></div>
+          <div class="form-group section-gap"><label>Item Name</label><input type="text" id="minus-item" placeholder="Item name"></div>
+          <div class="form-group section-gap"><label>Quantity</label><input type="number" id="minus-qty" placeholder="e.g. 20" min="1"></div>
+          <div class="form-group section-gap"><label>Note</label><input type="text" id="minus-note" placeholder="Optional note"></div>
+          <div class="btn-row"><button class="btn btn-danger" onclick="minusStock()">➖ Minus Stock</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📦 Current Stock Levels</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Item</th><th>In Stock</th><th>Avg Rate</th><th>Stock Value</th></tr></thead>
+          <tbody id="stock-table-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- STOCK LOG -->
+    <div id="page-stocklog" class="page">
+      <div class="page-title">Stock Log</div>
+      <div class="page-sub">Complete history of all stock movements</div>
+      <div class="card">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr; margin-bottom:12px; align-items:end;">
+          <div class="form-group">
+            <label>Filter Item</label>
+            <input type="text" id="log-search" placeholder="Item name..." oninput="renderStockLog()">
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select id="log-type" onchange="renderStockLog()">
+              <option value="">All</option>
+              <option value="add">Add</option>
+              <option value="minus">Minus</option>
+              <option value="damage">Damage</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Type</th><th>Item</th><th>Qty</th><th>Rate</th><th>Party / Note</th></tr></thead>
+          <tbody id="stocklog-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- DAMAGE GOODS -->
+    <div id="page-damage" class="page">
+      <div class="page-title">Damage Goods</div>
+      <div class="page-sub">Record damaged items — their value is deducted from profit</div>
+      <div class="card">
+        <div class="card-title" style="color:var(--red)">⚠️ Log Damage</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Item Name</label><input type="text" id="dmg-item" placeholder="Item name"></div>
+          <div class="form-group"><label>Quantity Damaged</label><input type="number" id="dmg-qty" placeholder="0" min="1"></div>
+          <div class="form-group"><label>Purchase Rate (₹)</label><input type="number" id="dmg-rate" placeholder="Cost price" min="0"></div>
+          <div class="form-group"><label>Reason</label><input type="text" id="dmg-reason" placeholder="Why damaged?"></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-danger" onclick="logDamage()">⚠️ Log Damage</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Damage Records</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total Loss</th><th>Reason</th></tr></thead>
+          <tbody id="damage-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- PROFIT & LOSS -->
+    <div id="page-profitloss" class="page">
+      <div class="page-title">Profit & Loss</div>
+      <div class="page-sub">Complete financial overview — visible only to you</div>
+      <div class="stats-row" id="pl-stats"></div>
+      <div class="card">
+        <div class="card-title">Bill-wise Profit Breakdown</div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Bill No</th><th>Party</th><th>Date</th><th>Sale Total</th><th>Purchase Total</th><th>Gross Profit</th><th>Damage Deduction</th><th>Net Profit</th></tr></thead>
+          <tbody id="pl-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- BILL PREVIEW MODAL -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal" style="max-width:660px;">
+    <button class="modal-close" onclick="closeModal('preview-modal')">✕</button>
+    <div class="modal-title">Customer Bill Preview</div>
+    <div id="bill-preview-content"></div>
+    <div class="btn-row no-print" style="margin-top:16px;">
+      <button class="btn btn-primary" onclick="printBill()">🖨 Print / Save PDF</button>
+      <button class="btn btn-ghost" onclick="closeModal('preview-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- BILL VIEW MODAL (saved) -->
+<div class="modal-overlay" id="view-bill-modal">
+  <div class="modal" style="max-width:660px;">
+    <button class="modal-close" onclick="closeModal('view-bill-modal')">✕</button>
+    <div class="modal-title">Bill</div>
+    <div id="view-bill-content"></div>
+    <div class="btn-row no-print" style="margin-top:16px;">
+      <button class="btn btn-primary" onclick="printViewBill()">🖨 Print</button>
+      <button class="btn btn-success" onclick="downloadViewBill()">⬇ Download</button>
+      <button class="btn btn-ghost" onclick="closeModal('view-bill-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toast-icon">✅</span><span id="toast-msg"></span></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let bills = JSON.parse(localStorage.getItem('sm_bills') || '[]');
+let stockLog = JSON.parse(localStorage.getItem('sm_stocklog') || '[]');
+let damageLog = JSON.parse(localStorage.getItem('sm_damage') || '[]');
+let billItems = []; // current bill being built
+let billCounter = parseInt(localStorage.getItem('sm_billcounter') || '1000');
+
+function save() {
+  localStorage.setItem('sm_bills', JSON.stringify(bills));
+  localStorage.setItem('sm_stocklog', JSON.stringify(stockLog));
+  localStorage.setItem('sm_damage', JSON.stringify(damageLog));
+  localStorage.setItem('sm_billcounter', billCounter);
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(name)) n.classList.add('active');
+  });
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'bills') renderBillsTable();
+  if (name === 'stock') renderStock();
+  if (name === 'stocklog') renderStockLog();
+  if (name === 'damage') renderDamage();
+  if (name === 'profitloss') renderPL();
+  if (name === 'billing') {
+    setDefaultDate();
+    populateStockDatalist();
+    if (!document.getElementById('bill-no').value)
+      document.getElementById('bill-no').value = 'BILL-' + (billCounter + 1);
+  }
+}
+
+function setDefaultDate() {
+  const d = document.getElementById('bill-date');
+  if (!d.value) d.value = new Date().toISOString().split('T')[0];
+}
+
+function populateStockDatalist() {
+  const dl = document.getElementById('stock-items-list');
+  const items = [...new Set(stockLog.map(l => l.item))];
+  dl.innerHTML = items.map(i => `<option value="${esc(i)}">`).join('');
+}
+
+// ─── BILLING ─────────────────────────────────────────────
+function addBillItem() {
+  const name = document.getElementById('item-name').value.trim();
+  const purchase = parseFloat(document.getElementById('item-purchase').value);
+  const sale = parseFloat(document.getElementById('item-sale').value);
+  const qty = parseInt(document.getElementById('item-qty').value);
+  if (!name || isNaN(purchase) || isNaN(sale) || isNaN(qty) || qty < 1) {
+    toast('⚠️', 'Please fill all item fields correctly'); return;
+  }
+  billItems.push({ name, purchase, sale, qty });
+  renderBillItemsTable();
+  document.getElementById('item-name').value = '';
+  document.getElementById('item-purchase').value = '';
+  document.getElementById('item-sale').value = '';
+  document.getElementById('item-qty').value = '';
+  document.getElementById('item-name').focus();
+}
+
+function removeBillItem(i) {
+  billItems.splice(i, 1);
+  renderBillItemsTable();
+}
+
+function renderBillItemsTable() {
+  const tbody = document.getElementById('bill-items-body');
+  const tfoot = document.getElementById('bill-items-foot');
+  if (billItems.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No items added yet</td></tr>';
+    tfoot.innerHTML = '';
+    return;
+  }
+  let totSale = 0, totPurchase = 0;
+  tbody.innerHTML = billItems.map((it, i) => {
+    const saleTotal = it.sale * it.qty;
+    const purchaseTotal = it.purchase * it.qty;
+    const profit = saleTotal - purchaseTotal;
+    totSale += saleTotal;
+    totPurchase += purchaseTotal;
+    return `<tr>
+      <td>${esc(it.name)}</td>
+      <td class="profit-owner">₹${it.purchase.toFixed(2)}</td>
+      <td>₹${it.sale.toFixed(2)}</td>
+      <td>${it.qty}</td>
+      <td>₹${saleTotal.toFixed(2)}</td>
+      <td class="${profit >= 0 ? 'badge badge-green' : 'badge badge-red'}">₹${profit.toFixed(2)}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="removeBillItem(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+  const netProfit = totSale - totPurchase;
+  tfoot.innerHTML = `<tr style="font-weight:600; background:var(--surface2);">
+    <td colspan="4" style="text-align:right; color:var(--muted); font-size:12px;">TOTAL</td>
+    <td>₹${totSale.toFixed(2)}</td>
+    <td style="color:${netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">₹${netProfit.toFixed(2)}</td>
+    <td></td>
+  </tr>`;
+}
+
+function clearBill() {
+  billItems = [];
+  document.getElementById('bill-party').value = '';
+  document.getElementById('bill-no').value = 'BILL-' + (billCounter + 1);
+  document.getElementById('bill-notes').value = '';
+  setDefaultDate();
+  renderBillItemsTable();
+}
+
+function saveBill() {
+  const party = document.getElementById('bill-party').value.trim();
+  const billNo = document.getElementById('bill-no').value.trim() || ('BILL-' + (billCounter + 1));
+  const date = document.getElementById('bill-date').value;
+  const notes = document.getElementById('bill-notes').value.trim();
+  if (!party) { toast('⚠️', 'Please enter party/customer name'); return; }
+  if (billItems.length === 0) { toast('⚠️', 'Add at least one item'); return; }
+  billCounter++;
+  const bill = {
+    id: 'BILL-' + billCounter,
+    billNo: billNo || 'BILL-' + billCounter,
+    party, date, notes,
+    items: JSON.parse(JSON.stringify(billItems)),
+    createdAt: new Date().toISOString()
+  };
+  bills.unshift(bill);
+  save();
+  toast('✅', `Bill ${bill.billNo} saved successfully!`);
+  clearBill();
+}
+
+function previewBill() {
+  const party = document.getElementById('bill-party').value.trim() || 'Customer';
+  const billNo = document.getElementById('bill-no').value.trim() || 'BILL-DRAFT';
+  const date = document.getElementById('bill-date').value || new Date().toISOString().split('T')[0];
+  const notes = document.getElementById('bill-notes').value.trim();
+  if (billItems.length === 0) { toast('⚠️', 'Add items first'); return; }
+  renderBillPreview({ party, billNo, date, notes, items: billItems }, 'bill-preview-content');
+  openModal('preview-modal');
+}
+
+function renderBillPreview(bill, containerId) {
+  let total = 0;
+  const rows = bill.items.map(it => {
+    const amt = it.sale * it.qty;
+    total += amt;
+    return `<tr><td>${esc(it.name)}</td><td>${it.qty}</td><td>₹${it.sale.toFixed(2)}</td><td>₹${amt.toFixed(2)}</td></tr>`;
+  }).join('');
+  document.getElementById(containerId).innerHTML = `
+  <div class="bill-preview" id="printable-bill">
+    <h2>TAX INVOICE</h2>
+    <div class="meta">
+      <strong>Bill No:</strong> ${esc(bill.billNo)} &nbsp;&nbsp;
+      <strong>Date:</strong> ${bill.date}<br>
+      <strong>Party:</strong> ${esc(bill.party)}
+      ${bill.notes ? `<br><strong>Note:</strong> ${esc(bill.notes)}` : ''}
+    </div>
+    <table>
+      <thead><tr><th>Item</th><th>Qty</th><th>Rate (₹)</th><th>Amount (₹)</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr class="total-row"><td colspan="3" style="text-align:right;padding:8px 10px;">Total Amount</td><td style="padding:8px 10px;">₹${total.toFixed(2)}</td></tr></tfoot>
+    </table>
+    <div class="footer">Thank you for your business! • This is a computer-generated bill.</div>
+  </div>`;
+}
+
+function printBill() {
+  const party = document.getElementById('bill-party').value.trim() || 'Customer';
+  const billNo = document.getElementById('bill-no').value.trim() || 'BILL-DRAFT';
+  const date = document.getElementById('bill-date').value || new Date().toISOString().split('T')[0];
+  const notes = document.getElementById('bill-notes').value.trim();
+  if (billItems.length === 0) { toast('⚠️', 'Add items first'); return; }
+  const draftBill = { party, billNo, date, notes, items: billItems };
+  const html = getBillPrintHTML(draftBill);
+  const win = window.open('', '_blank');
+  if (!win) { toast('⚠️', 'Allow popups to print PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+}
+
+function printViewBill() {
+  if (window._currentViewBillId) {
+    const bill = bills.find(b => b.id === window._currentViewBillId);
+    if (!bill) return;
+    const html = getBillPrintHTML(bill);
+    const win = window.open('', '_blank');
+    if (!win) { toast('⚠️', 'Allow popups to print PDF'); return; }
+    win.document.write(html);
+    win.document.close();
+  }
+}
+
+function downloadViewBill() {
+  if (window._currentViewBillId) downloadBill(window._currentViewBillId);
+}
+
+// ─── ALL BILLS TABLE ──────────────────────────────────────
+function renderBillsTable() {
+  const search = (document.getElementById('search-party')?.value || '').toLowerCase();
+  const from = document.getElementById('filter-from')?.value;
+  const to = document.getElementById('filter-to')?.value;
+  let filtered = bills.filter(b => {
+    if (search && !b.party.toLowerCase().includes(search)) return false;
+    if (from && b.date < from) return false;
+    if (to && b.date > to) return false;
+    return true;
+  });
+  const tbody = document.getElementById('bills-body');
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="icon">📋</div>No bills found</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(b => {
+    const saleTotal = b.items.reduce((s, i) => s + i.sale * i.qty, 0);
+    const purchTotal = b.items.reduce((s, i) => s + i.purchase * i.qty, 0);
+    const profit = saleTotal - purchTotal;
+    return `<tr>
+      <td><span class="badge badge-yellow">${esc(b.billNo)}</span></td>
+      <td>${esc(b.party)}</td>
+      <td>${b.date}</td>
+      <td>${b.items.length} item(s)</td>
+      <td>₹${saleTotal.toFixed(2)}</td>
+      <td class="profit-owner">₹${purchTotal.toFixed(2)}</td>
+      <td><span class="${profit >= 0 ? 'badge badge-green' : 'badge badge-red'}">₹${profit.toFixed(2)}</span></td>
+      <td style="white-space:nowrap;">
+        <button class="btn btn-sm btn-ghost" onclick="viewBill('${b.id}')">👁 View</button>
+        <button class="btn btn-sm btn-ghost" onclick="downloadBill('${b.id}')" style="color:var(--green);border-color:var(--green);">⬇ PDF</button>
+        <button class="btn btn-sm btn-ghost" onclick="deleteBill('${b.id}')" style="color:var(--red);border-color:var(--red);">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function viewBill(id) {
+  const bill = bills.find(b => b.id === id);
+  if (!bill) return;
+  window._currentViewBillId = id;
+  const container = document.getElementById('view-bill-content');
+  renderBillPreview(bill, 'view-bill-content');
+  // Rename printable div
+  const pb = container.querySelector('#printable-bill');
+  if (pb) pb.id = 'printable-view-bill';
+  openModal('view-bill-modal');
+}
+
+function deleteBill(id) {
+  if (!confirm('Delete this bill? This cannot be undone.')) return;
+  bills = bills.filter(b => b.id !== id);
+  save();
+  renderBillsTable();
+  toast('🗑', 'Bill deleted');
+}
+
+function getBillPrintHTML(bill) {
+  let total = 0;
+  const rows = bill.items.map(it => {
+    const amt = it.sale * it.qty;
+    total += amt;
+    return `<tr><td>${esc(it.name)}</td><td style="text-align:center;">${it.qty}</td><td style="text-align:right;">&#8377;${it.sale.toFixed(2)}</td><td style="text-align:right;">&#8377;${amt.toFixed(2)}</td></tr>`;
+  }).join('');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${esc(bill.billNo)} - ${esc(bill.party)}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#222;padding:40px;max-width:680px;margin:0 auto;}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:18px;border-bottom:2px solid #111;}
+    .company{font-size:22px;font-weight:800;letter-spacing:-0.5px;color:#111;}
+    .company small{display:block;font-size:12px;font-weight:400;color:#777;margin-top:2px;letter-spacing:0;}
+    .badge{background:#111;color:#fff;font-size:11px;padding:4px 10px;border-radius:4px;font-weight:600;letter-spacing:1px;}
+    .meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px;}
+    .meta-box{background:#f8f8f8;border-radius:8px;padding:14px 16px;}
+    .meta-box label{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:#999;display:block;margin-bottom:4px;}
+    .meta-box span{font-size:14px;font-weight:600;color:#111;}
+    table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:0;}
+    thead tr{background:#111;color:#fff;}
+    thead th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;}
+    thead th:nth-child(2){text-align:center;}
+    thead th:nth-child(3),thead th:nth-child(4){text-align:right;}
+    tbody tr:nth-child(even){background:#f9f9f9;}
+    tbody td{padding:10px 12px;border-bottom:1px solid #eee;color:#333;vertical-align:middle;}
+    .total-section{display:flex;justify-content:flex-end;margin-top:16px;}
+    .total-box{background:#111;color:#fff;padding:14px 20px;border-radius:8px;min-width:200px;}
+    .total-box .lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#aaa;margin-bottom:4px;}
+    .total-box .val{font-size:22px;font-weight:800;letter-spacing:-0.5px;}
+    .footer{margin-top:32px;text-align:center;font-size:11px;color:#bbb;border-top:1px solid #eee;padding-top:16px;}
+    @media print{
+      body{padding:24px;}
+      @page{size:A4;margin:15mm 12mm;}
+    }
+  </style>
+  <script>window.onload=function(){window.print();}<\/script>
+  </head><body>
+  <div class="header">
+    <div>
+      <div class="company">TAX INVOICE<small>Customer Copy</small></div>
+    </div>
+    <div style="text-align:right;">
+      <div class="badge">INVOICE</div>
+      <div style="font-size:12px;color:#777;margin-top:8px;">Generated by StockMaster</div>
+    </div>
+  </div>
+  <div class="meta-grid">
+    <div class="meta-box"><label>Bill Number</label><span>${esc(bill.billNo)}</span></div>
+    <div class="meta-box"><label>Date</label><span>${bill.date}</span></div>
+    <div class="meta-box" style="grid-column:1/-1;"><label>Party / Customer</label><span>${esc(bill.party)}</span>${bill.notes ? `<div style="font-size:12px;color:#777;margin-top:4px;">${esc(bill.notes)}</div>` : ''}</div>
+  </div>
+  <table>
+    <thead><tr><th>Item Description</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Rate (&#8377;)</th><th style="text-align:right;">Amount (&#8377;)</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="total-section">
+    <div class="total-box">
+      <div class="lbl">Total Amount</div>
+      <div class="val">&#8377;${total.toFixed(2)}</div>
+    </div>
+  </div>
+  <div class="footer">Thank you for your business! &bull; This is a computer-generated bill. &bull; ${esc(bill.billNo)}</div>
+  </body></html>`;
+}
+
+function downloadBill(id) {
+  const bill = bills.find(b => b.id === id);
+  if (!bill) return;
+  const html = getBillPrintHTML(bill);
+  const win = window.open('', '_blank');
+  if (!win) { toast('⚠️', 'Allow popups to download/print PDF'); return; }
+  win.document.write(html);
+  win.document.close();
+  toast('⬇', `Opening PDF dialog for ${bill.billNo}`);
+}
+
+// ─── STOCK ────────────────────────────────────────────────
+function addStock() {
+  const item = document.getElementById('add-item').value.trim();
+  const qty = parseInt(document.getElementById('add-qty').value);
+  const rate = parseFloat(document.getElementById('add-rate').value);
+  const supplier = document.getElementById('add-supplier').value.trim();
+  if (!item || isNaN(qty) || qty < 1 || isNaN(rate) || rate < 0) { toast('⚠️', 'Fill all fields correctly'); return; }
+  stockLog.push({
+    id: Date.now(),
+    type: 'add',
+    date: new Date().toISOString().split('T')[0],
+    item, qty, rate,
+    party: supplier || '—'
+  });
+  save();
+  toast('✅', `Added ${qty} units of ${item}`);
+  document.getElementById('add-item').value = '';
+  document.getElementById('add-qty').value = '';
+  document.getElementById('add-rate').value = '';
+  document.getElementById('add-supplier').value = '';
+  renderStock();
+}
+
+function minusStock() {
+  const party = document.getElementById('minus-party').value.trim();
+  const item = document.getElementById('minus-item').value.trim();
+  const qty = parseInt(document.getElementById('minus-qty').value);
+  const note = document.getElementById('minus-note').value.trim();
+  if (!item || isNaN(qty) || qty < 1) { toast('⚠️', 'Fill item and quantity'); return; }
+  stockLog.push({
+    id: Date.now(),
+    type: 'minus',
+    date: new Date().toISOString().split('T')[0],
+    item, qty, rate: 0,
+    party: party || '—',
+    note: note || ''
+  });
+  save();
+  toast('✅', `Removed ${qty} units of ${item}`);
+  document.getElementById('minus-party').value = '';
+  document.getElementById('minus-item').value = '';
+  document.getElementById('minus-qty').value = '';
+  document.getElementById('minus-note').value = '';
+  renderStock();
+}
+
+function getStockSummary() {
+  const map = {};
+  stockLog.forEach(l => {
+    if (!map[l.item]) map[l.item] = { qty: 0, totalCost: 0, totalAdded: 0 };
+    if (l.type === 'add') {
+      map[l.item].qty += l.qty;
+      map[l.item].totalCost += l.qty * l.rate;
+      map[l.item].totalAdded += l.qty;
+    } else if (l.type === 'minus') {
+      map[l.item].qty -= l.qty;
+    }
+  });
+  damageLog.forEach(d => {
+    if (!map[d.item]) map[d.item] = { qty: 0, totalCost: 0, totalAdded: 0 };
+    map[d.item].qty -= d.qty;
+  });
+  return map;
+}
+
+function renderStock() {
+  const map = getStockSummary();
+  const tbody = document.getElementById('stock-table-body');
+  const keys = Object.keys(map);
+  if (!keys.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><div class="icon">📦</div>No stock records</td></tr>'; return; }
+  tbody.innerHTML = keys.sort().map(item => {
+    const s = map[item];
+    const avg = s.totalAdded > 0 ? (s.totalCost / s.totalAdded) : 0;
+    const val = s.qty > 0 ? s.qty * avg : 0;
+    return `<tr>
+      <td>${esc(item)}</td>
+      <td><span class="${s.qty > 0 ? 'badge badge-green' : s.qty === 0 ? 'badge badge-gray' : 'badge badge-red'}">${s.qty}</span></td>
+      <td>₹${avg.toFixed(2)}</td>
+      <td>₹${val.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── STOCK LOG ────────────────────────────────────────────
+function renderStockLog() {
+  const search = (document.getElementById('log-search')?.value || '').toLowerCase();
+  const type = document.getElementById('log-type')?.value || '';
+  let entries = [
+    ...stockLog.map(l => ({ ...l, _src: 'stock' })),
+    ...damageLog.map(d => ({ id: d.id, type: 'damage', date: d.date, item: d.item, qty: d.qty, rate: d.rate, party: d.reason || '—', _src: 'damage' }))
+  ].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  if (search) entries = entries.filter(e => e.item.toLowerCase().includes(search));
+  if (type) entries = entries.filter(e => e.type === type);
+  const tbody = document.getElementById('stocklog-body');
+  if (!entries.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="icon">📝</div>No records</td></tr>'; return; }
+  tbody.innerHTML = entries.map(e => {
+    const typeBadge = e.type === 'add' ? '<span class="tag-add">ADD</span>' :
+                      e.type === 'minus' ? '<span class="tag-minus">MINUS</span>' :
+                      '<span class="tag-damage">DAMAGE</span>';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;">${e.date}</td>
+      <td>${typeBadge}</td>
+      <td>${esc(e.item)}</td>
+      <td>${e.type === 'minus' ? '-' : ''}${e.qty}</td>
+      <td>${e.rate > 0 ? '₹' + e.rate.toFixed(2) : '—'}</td>
+      <td>${esc(e.party || '—')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── DAMAGE ───────────────────────────────────────────────
+function logDamage() {
+  const item = document.getElementById('dmg-item').value.trim();
+  const qty = parseInt(document.getElementById('dmg-qty').value);
+  const rate = parseFloat(document.getElementById('dmg-rate').value);
+  const reason = document.getElementById('dmg-reason').value.trim();
+  if (!item || isNaN(qty) || qty < 1 || isNaN(rate) || rate < 0) { toast('⚠️', 'Fill all damage fields'); return; }
+  damageLog.push({ id: Date.now(), date: new Date().toISOString().split('T')[0], item, qty, rate, reason });
+  save();
+  toast('✅', `Damage logged: ${qty} × ${item}`);
+  document.getElementById('dmg-item').value = '';
+  document.getElementById('dmg-qty').value = '';
+  document.getElementById('dmg-rate').value = '';
+  document.getElementById('dmg-reason').value = '';
+  renderDamage();
+}
+
+function renderDamage() {
+  const tbody = document.getElementById('damage-body');
+  const sorted = [...damageLog].reverse();
+  if (!sorted.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><div class="icon">⚠️</div>No damage records</td></tr>'; return; }
+  tbody.innerHTML = sorted.map(d => {
+    const loss = d.qty * d.rate;
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;">${d.date}</td>
+      <td>${esc(d.item)}</td>
+      <td>${d.qty}</td>
+      <td>₹${d.rate.toFixed(2)}</td>
+      <td style="color:var(--red)">₹${loss.toFixed(2)}</td>
+      <td>${esc(d.reason || '—')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────
+function renderDashboard() {
+  const totalSale = bills.reduce((s, b) => s + b.items.reduce((x, i) => x + i.sale * i.qty, 0), 0);
+  const totalPurch = bills.reduce((s, b) => s + b.items.reduce((x, i) => x + i.purchase * i.qty, 0), 0);
+  const totalDamage = damageLog.reduce((s, d) => s + d.qty * d.rate, 0);
+  const netProfit = totalSale - totalPurch - totalDamage;
+  const stockMap = getStockSummary();
+  const stockItems = Object.keys(stockMap).length;
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Bills</div><div class="stat-value yellow">${bills.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Sale</div><div class="stat-value yellow">₹${totalSale.toFixed(0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value ${netProfit >= 0 ? 'green' : 'red'}">₹${netProfit.toFixed(0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Damage Loss</div><div class="stat-value red">₹${totalDamage.toFixed(0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Stock Items</div><div class="stat-value yellow">${stockItems}</div></div>
+  `;
+
+  const tbody = document.getElementById('dash-bills-body');
+  const recent = bills.slice(0, 8);
+  if (!recent.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No bills yet. <a href="#" onclick="showPage(\'billing\')" style="color:var(--accent)">Create one →</a></td></tr>'; return; }
+  tbody.innerHTML = recent.map(b => {
+    const saleTotal = b.items.reduce((s, i) => s + i.sale * i.qty, 0);
+    const profit = saleTotal - b.items.reduce((s, i) => s + i.purchase * i.qty, 0);
+    return `<tr>
+      <td><span class="badge badge-yellow">${esc(b.billNo)}</span></td>
+      <td>${esc(b.party)}</td>
+      <td>${b.date}</td>
+      <td>₹${saleTotal.toFixed(2)}</td>
+      <td><span class="${profit >= 0 ? 'badge badge-green' : 'badge badge-red'}">₹${profit.toFixed(2)}</span></td>
+      <td><button class="btn btn-sm btn-ghost" onclick="viewBill('${b.id}')">👁 View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── PROFIT & LOSS ────────────────────────────────────────
+function renderPL() {
+  const totalSale = bills.reduce((s, b) => s + b.items.reduce((x, i) => x + i.sale * i.qty, 0), 0);
+  const totalPurch = bills.reduce((s, b) => s + b.items.reduce((x, i) => x + i.purchase * i.qty, 0), 0);
+  const totalDamage = damageLog.reduce((s, d) => s + d.qty * d.rate, 0);
+  const grossProfit = totalSale - totalPurch;
+  const netProfit = grossProfit - totalDamage;
+
+  document.getElementById('pl-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Sale</div><div class="stat-value yellow">₹${totalSale.toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Purchase</div><div class="stat-value yellow">₹${totalPurch.toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Gross Profit</div><div class="stat-value ${grossProfit >= 0 ? 'green' : 'red'}">₹${grossProfit.toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Damage Loss</div><div class="stat-value red">₹${totalDamage.toFixed(2)}</div></div>
+    <div class="stat-card"><div class="stat-label">Net Profit</div><div class="stat-value ${netProfit >= 0 ? 'green' : 'red'}">₹${netProfit.toFixed(2)}</div></div>
+  `;
+
+  const tbody = document.getElementById('pl-body');
+  if (!bills.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No bills yet</td></tr>'; return; }
+  // Spread damage proportionally — just show as a separate line
+  tbody.innerHTML = bills.map(b => {
+    const saleTotal = b.items.reduce((s, i) => s + i.sale * i.qty, 0);
+    const purchTotal = b.items.reduce((s, i) => s + i.purchase * i.qty, 0);
+    const gross = saleTotal - purchTotal;
+    return `<tr>
+      <td><span class="badge badge-yellow">${esc(b.billNo)}</span></td>
+      <td>${esc(b.party)}</td>
+      <td>${b.date}</td>
+      <td>₹${saleTotal.toFixed(2)}</td>
+      <td class="profit-owner">₹${purchTotal.toFixed(2)}</td>
+      <td><span class="${gross >= 0 ? 'badge badge-green' : 'badge badge-red'}">₹${gross.toFixed(2)}</span></td>
+      <td style="color:var(--red)">—</td>
+      <td><span class="${gross >= 0 ? 'badge badge-green' : 'badge badge-red'}">₹${gross.toFixed(2)}</span></td>
+    </tr>`;
+  }).join('') + `<tr style="background:var(--surface2);font-weight:600;">
+    <td colspan="5" style="text-align:right;color:var(--muted);font-size:12px;">TOTAL DAMAGE DEDUCTION</td>
+    <td></td>
+    <td style="color:var(--red)">-₹${totalDamage.toFixed(2)}</td>
+    <td style="color:${netProfit >= 0 ? 'var(--green)' : 'var(--red)'}">₹${netProfit.toFixed(2)}</td>
+  </tr>`;
+}
+
+// ─── MODALS ───────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ─── TOAST ────────────────────────────────────────────────
+function toast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── UTILS ───────────────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+renderBillItemsTable();
+renderDashboard();
+</script>
+</body>
+</html>
