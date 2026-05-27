@@ -18,6 +18,8 @@ export default function App() {
     return JSON.parse(localStorage.getItem('sm_user') || 'null');
   });
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   // Navigation Router
   const [currentPage, setCurrentPage] = useState('dashboard');
 
@@ -550,12 +552,13 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* SIDEBAR NAVIGATION */}
       <Sidebar 
         currentPage={currentPage} 
         setCurrentPage={setCurrentPage} 
         currentUser={currentUser}
         onLogout={handleLogout}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
       />
 
       {/* MAIN VIEWPORT */}

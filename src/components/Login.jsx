@@ -117,9 +117,8 @@ export default function Login({ onLogin }) {
           </button>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: 'var(--muted)', lineHeight: '1.6' }}>
-          <strong>Admin Access:</strong> Use username <code style={{ color: 'var(--accent)', background: 'var(--surface2)', padding: '2px 4px', borderRadius: '4px', fontFamily: 'monospace' }}>admin</code> & password <code style={{ color: 'var(--accent)', background: 'var(--surface2)', padding: '2px 4px', borderRadius: '4px', fontFamily: 'monospace' }}>admin123</code><br/>
-          <em>(Please enter Admin credentials manually to sign in)</em>
+        <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: 'var(--muted)' }}>
+          © {new Date().getFullYear()} StockMaster. All rights reserved.
         </div>
       </div>
     </div>
