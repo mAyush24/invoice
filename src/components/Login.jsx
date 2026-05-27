@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { User, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 
 export default function Login({ onLogin }) {
@@ -24,18 +24,6 @@ export default function Login({ onLogin }) {
       onLogin({ username: 'Staff Member', role: 'staff' });
     } else {
       setError('Invalid username or password.');
-    }
-  };
-
-  const handleQuickLogin = (role) => {
-    if (role === 'admin') {
-      setUsername('admin');
-      setPassword('admin123');
-      onLogin({ username: 'Admin', role: 'admin' });
-    } else {
-      setUsername('staff');
-      setPassword('staff123');
-      onLogin({ username: 'Staff Member', role: 'staff' });
     }
   };
 
@@ -108,14 +96,6 @@ export default function Login({ onLogin }) {
             <LogIn size={18} /> Sign In
           </button>
         </form>
-
-        <div className="login-divider">Quick Fill & Test</div>
-
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button type="button" className="quick-fill-btn" onClick={() => handleQuickLogin('staff')} style={{ width: '100%' }}>
-            <span style={{ color: 'var(--green)' }}>🛡️</span> Staff Quick Login
-          </button>
-        </div>
 
         <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '11px', color: 'var(--muted)' }}>
           © {new Date().getFullYear()} StockMaster. All rights reserved.

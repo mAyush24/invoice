@@ -68,7 +68,6 @@ export default function StockLog({ stockLog, damageLog }) {
                   <th>Type</th>
                   <th>Item</th>
                   <th>Qty</th>
-                  <th>Rate</th>
                   <th>Party / Note</th>
                 </tr>
               </thead>
@@ -89,7 +88,6 @@ export default function StockLog({ stockLog, damageLog }) {
                       <td>{typeBadge}</td>
                       <td>{e.item}</td>
                       <td>{e.type === 'minus' ? '-' : ''}{e.qty}</td>
-                      <td>{e.rate > 0 ? `₹${e.rate.toFixed(2)}` : '—'}</td>
                       <td>{e.party || '—'}</td>
                     </tr>
                   );
