@@ -241,14 +241,38 @@ export default function App() {
 
   const handlePrint = (bill) => {
     const html = getBillPrintHTML(bill);
-    const win = window.open('', '_blank');
-    if (!win) {
-      showToast('⚠️', 'Allow popups to trigger print');
-      return;
-    }
-    win.document.write(html);
-    win.document.close();
+    
+    // Create an off-screen iframe to bypass pop-up blockers and COOP headers in production
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.top = '-9999px';
+    iframe.style.left = '-9999px';
+    iframe.style.width = '1px';
+    iframe.style.height = '1px';
+    iframe.style.border = 'none';
+    iframe.style.overflow = 'hidden';
+    iframe.title = 'Print Bill';
+
+    const cleanup = () => {
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    };
+
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document || iframe.contentDocument;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    // Listen for the afterprint event to clean up the iframe from DOM
+    iframe.contentWindow.addEventListener('afterprint', cleanup);
+
+    // Fallback cleanup after 60 seconds
+    setTimeout(cleanup, 60000);
   };
+
 
   const handleDownload = (billId) => {
     const selected = bills.find((b) => b.id === billId);
